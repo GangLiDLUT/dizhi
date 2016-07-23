@@ -1,0 +1,7 @@
+*~
+*.mat
+*.csv
+*.docx
+*.rar
+*.h5
+python/.ipynb_checkpoints/*
