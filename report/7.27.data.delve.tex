@@ -1,0 +1,448 @@
+% Created 2016-08-05 Fri 09:35
+\documentclass[bigger]{beamer}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{fixltx2e}
+\usepackage{graphicx}
+\usepackage{longtable}
+\usepackage{float}
+\usepackage{wrapfig}
+\usepackage{rotating}
+\usepackage[normalem]{ulem}
+\usepackage{amsmath}
+\usepackage{textcomp}
+\usepackage{marvosym}
+\usepackage{wasysym}
+\usepackage{amssymb}
+\usepackage{hyperref}
+\tolerance=1000
+\usepackage{xeCJK}
+\setCJKmainfont[BoldFont=STZhongsong, ItalicFont=STKaiti]{STSong}
+\setCJKsansfont[BoldFont=STHeiti]{STXihei}
+\setCJKmonofont{STFangsong}
+\usetheme{Madrid}
+\author{crackhopper}
+\date{2016-07-27 14:28:31}
+\title{Data Exploration}
+\hypersetup{
+  pdfkeywords={},
+  pdfsubject={data exploration},
+  pdfcreator={Emacs 24.5.1 (Org mode 8.2.10)}}
+\begin{document}
+
+\maketitle
+\begin{frame}{Outline}
+\tableofcontents
+\end{frame}
+
+
+\section{Some Found Error in Data}
+\label{sec-1}
+\begin{frame}[label=sec-1-1]{Some Little Error in Data}
+The feature map file is uncorrect. "参数对照表.csv"
+\begin{figure}[htb]
+\centering
+\includegraphics[width=11cm]{./images/16.0727.170448.png}
+\end{figure}
+
+We have feature "FRB4" here
+\begin{figure}[htb]
+\centering
+\includegraphics[width=7cm]{./images/16.0727.170656.png}
+\end{figure}
+\end{frame}
+\begin{frame}[fragile,label=sec-1-2]{Some Little Error in Data}
+ But, we lose "FRB4" in our data, (in original data we also have feature
+"T")
+
+\begin{verbatim}
+feats.Properties.VariableNames
+\end{verbatim}
+\includegraphics[width=.9\linewidth]{./images/16.0727.170753.png}
+\end{frame}
+
+\section{Explore the Labels}
+\label{sec-2}
+\begin{frame}[fragile,label=sec-2-1]{label F}
+ code:
+\begin{verbatim}
+hist(labs.F(abs(labs.F)<6000))
+\end{verbatim}
+
+\begin{figure}[htb]
+\centering
+\includegraphics[width=7cm]{./images/16.0727.154614.png}
+\end{figure}
+\end{frame}
+\begin{frame}[fragile,label=sec-2-2]{label T}
+ code:
+\begin{verbatim}
+hist(labs.F(abs(labs.F)<100))
+\end{verbatim}
+
+\begin{figure}[htb]
+\centering
+\includegraphics[width=7cm]{./images/16.0727.155045.png}
+\end{figure}
+\end{frame}
+\begin{frame}[fragile,label=sec-2-3]{label V}
+ code:
+\begin{verbatim}
+hist(labs.V(abs(labs.V)<1))
+\end{verbatim}
+
+\begin{figure}[htb]
+\centering
+\includegraphics[width=7cm]{./images/16.0727.155213.png}
+\end{figure}
+\end{frame}
+\begin{frame}[fragile,label=sec-2-4]{Conclusion}
+ \begin{block}{Conclusion}
+we should seperate data when we predict F and T.
+\end{block}
+\begin{block}{Codes}
+\begin{verbatim}
+featF = feats(~Fzero,:);
+labF = labs(~Fzero,:);
+featT = feats(~Tzero,:);
+labT = labs(~Tzero,:);
+featV = feats;
+labV = labs;
+\end{verbatim}
+\end{block}
+\end{frame}
+\section{Explore the Features}
+\label{sec-3}
+\begin{frame}[fragile,label=sec-3-1]{Feature Category}
+ \begin{block}{Feature Category}
+\begin{itemize}
+\item machine parameters
+\item geometrical parameters
+\end{itemize}
+\end{block}
+\begin{block}{Codes}
+\begin{verbatim}
+featureNames = featF.Properties.VariableNames;
+machine_para_idx = ...
+  arrayfun(@(n) isempty(n{1}), ...
+           regexp(featureNames,'\d'));
+geometry_para_idx = ~machine_para_idx;
+\end{verbatim}
+\end{block}
+\end{frame}
+\begin{frame}[label=sec-3-2]{Feature Zero Count}
+NOTE:
+\begin{description}
+\item[{1-50}] machine parameters
+\item[{51-81}] geometrical parameters
+\end{description}
+\begin{figure}[htb]
+\centering
+\includegraphics[width=7cm]{./images/16.0727.160122.png}
+\end{figure}
+\end{frame}
+\begin{frame}[fragile,label=sec-3-3]{Machanical Feature of a Large Zero Count}
+ \begin{block}{Code}
+\begingroup 
+\footnotesize
+\begin{verbatim}
+sel = (featureZeroCount > 10000) & machine_para_idx;
+featuresManyZero = featF(:,sel);
+for token = featuresManyZero.Properties.VariableNames
+  t = token{:};
+  fmat = table2array(featuresManyZero(:,t));
+  fprintf('%s, %s, %d\n',t ...
+         ,getFeatMeaning(t,feat_meaning,feat_token) ...
+         ,sum(fmat==0));
+end
+\end{verbatim}
+\endgroup
+\end{block}
+\begin{block}{Result}
+\begingroup 
+\footnotesize
+\begin{verbatim}
+PDWDL, 盾尾密封前部左下压力, 18341
+PZUL, 左上注浆压力, 45819
+PZUR, 右上注浆压力, 45730
+PZDR, 右下注浆压力, 65981
+PZDL, 左下注浆压力, 51743
+\end{verbatim}
+\endgroup
+\end{block}
+\end{frame}
+\begin{frame}[label=sec-3-4]{Machanical Feature of a Large Zero Count}
+\begin{figure}[htb]
+\centering
+\includegraphics[width=9cm]{./images/16.0727.172847.png}
+\end{figure}
+\end{frame}
+\begin{frame}[label=sec-3-5]{Machanical Feature of a Large Zero Count}
+How to process these features?
+
+\vspace{10pt}
+
+for : PZUL,PZUR,PZDL,PZDR
+
+\vspace{10pt}
+
+\begin{itemize}
+\item Ignore them [we just ignore them now]
+\item Seperate the zero and non-zero, then process the data
+\item Drop the features
+\item Turn into Discrete features
+\end{itemize}
+\end{frame}
+\begin{frame}[fragile,label=sec-3-6]{Feature Quantiles}
+ \begin{verbatim}
+ds=table2dataset(featF);
+a=summary(ds);
+b=[a.Variables(:).Data];
+c=[b(:).Quantiles];
+\end{verbatim}
+
+
+\begin{figure}[htb]
+\centering
+\includegraphics[width=10cm]{./images/16.0727.180851.png}
+\end{figure}
+
+\begin{figure}[htb]
+\centering
+\includegraphics[width=10cm]{./images/16.0727.181141.png}
+\end{figure}
+\end{frame}
+\begin{frame}[label=sec-3-7]{Feature Quantiles}
+\begin{block}{Problems}
+\begin{itemize}
+\item Many feature concentrate around small value
+\item Features have different scales
+\end{itemize}
+\end{block}
+\begin{block}{What we can do}
+\begin{itemize}
+\item Outlier Detection (will force some feature to be zero)
+\item Normalize all features (we do this now)
+\item Equalize some features
+\item Pick Out some feature to seperately handle (features of almost
+Zero-value)
+\end{itemize}
+\end{block}
+\end{frame}
+\begin{frame}[label=sec-3-8]{Step Changes in Geometrical Features}
+Y2,地层2比重
+\begin{figure}[htb]
+\centering
+\includegraphics[width=7cm]{./images/16.0727.183921.png}
+\end{figure}
+\end{frame}
+\begin{frame}[label=sec-3-9]{Step Changes in Geometrical Features}
+H1,地层1厚度
+\begin{figure}[htb]
+\centering
+\includegraphics[width=7cm]{./images/16.0727.184202.png}
+\end{figure}
+\end{frame}
+\begin{frame}[label=sec-3-10]{Conclusions about Geometrical Features}
+\begin{itemize}
+\item Not very predictable
+\item Can be treated as const value in local
+\item Change in a jumping way
+\item Some parameters change more frequently than others
+\end{itemize}
+\begin{block}{What can we do in future?}
+\begin{itemize}
+\item For less changed parameter, we can seperate dataset so that they are
+not changed in a subset
+\item For frequently changed parameter, maybe smoothen?
+\end{itemize}
+\end{block}
+We don't handle this problem
+\end{frame}
+
+\section{Quick and Dirty Experiment}
+\label{sec-4}
+\begin{frame}[label=sec-4-1]{Data Prepare}
+I drop the sample with abnormal labels, and get 3 tasks corresponding
+to the prediction of each label :
+
+\begin{description}
+\item[{X$_{\text{F}}$, Y$_{\text{F}}$}] drop 0-valued F, normalize all features
+\item[{X$_{\text{T}}$, Y$_{\text{T}}$}] drop 0-valued T, normalize all features
+\item[{X$_{\text{V}}$, Y$_{\text{V}}$}] normalize all samples
+\end{description}
+
+Now we have 3 task, with a little different sampleset.
+\end{frame}
+\begin{frame}[fragile,label=sec-4-2]{Linear model Prediction of F}
+ \begin{block}{Code}
+\begin{verbatim}
+lm=fitlm(X_tr{1},Y_tr{1});
+w=lm.Coefficients.Estimate;
+rmse=std(Y_te{1}-X_te{1}*w(2:nfeat+1)-w(1));
+fprintf('lm :%.4f\n',rmse);
+\end{verbatim}
+\end{block}
+\begin{block}{Result}
+lm :1.5977
+\end{block}
+\end{frame}
+\begin{frame}[label=sec-4-3]{Multitask Learning for a Trial}
+\begin{block}{Multi-task Lasso with Least Squares Loss}
+\begin{equation*}
+\min_W \sum_{i=1}^M ||W^T_iX_i-Y_i|| + \rho_1 ||W||_1 + \rho_2 ||W||_F^2
+\end{equation*}
+\end{block}
+\begin{figure}[htb]
+\centering
+\includegraphics[width=10cm]{./images/16.0727.193246.png}
+\end{figure}
+\end{frame}
+\begin{frame}[fragile,label=sec-4-4]{Prediction of F (MTL lasso)}
+ \begin{block}{Code}
+\begin{verbatim}
+W = Least_Lasso(X_tr, Y_tr, 0, opts);
+X1=X_te{1};
+Y1=Y_te{1};
+W1=W(:,1);
+rmse=std(Y1-X1*W1);
+fprintf('mtl:%.4f\n',rmse);
+\end{verbatim}
+\end{block}
+\begin{block}{Result}
+mtl:1.9027
+\end{block}
+\end{frame}
+\begin{frame}[label=sec-4-5]{Multitask Learning for a Trial}
+\begin{block}{Multi-task with Trace-norm regularizer}
+\begin{equation*}
+\min_W \mathcal{L}(W) + \lambda rank(W)
+\end{equation*}
+\end{block}
+\begin{figure}[htb]
+\centering
+\includegraphics[width=10cm]{./images/16.0727.215107.png}
+\end{figure}
+\end{frame}
+\begin{frame}[fragile,label=sec-4-6]{Prediction of F (MTL trace norm)}
+ \begin{block}{Code}
+\begin{verbatim}
+W = Least_Trace(X_tr, Y_tr, 0, opts);
+X1=X_te{1};
+Y1=Y_te{1};
+W1=W(:,1);
+rmse=std(Y1-X1*W1);
+fprintf('mtl:%.4f\n',rmse);
+\end{verbatim}
+\end{block}
+\begin{block}{Result}
+mtl:49.6251
+\end{block}
+\end{frame}
+\section{Experiment Done by Sci-kit learn}
+\label{sec-5}
+\begin{frame}[label=sec-5-1]{Linear Regression}
+\begin{figure}[htb]
+\centering
+\includegraphics[width=8cm]{./images/16.0804.193322.png}
+\end{figure}
+\end{frame}
+\begin{frame}[label=sec-5-2]{Score of Linear Regression}
+\begin{equation*}
+score = 1-\frac{\sum(y_{pred}-y_{true})^2}{\sum(y_{true}-y_{mean})^{2}}
+\end{equation*}
+
+\begin{figure}[htb]
+\centering
+\includegraphics[width=7cm]{./images/16.0804.193825.png}
+\end{figure}
+
+\begin{equation*}
+rmse = \sqrt{\frac{1}{n}\sum(y_{pred}-y_{true})^2}
+\end{equation*}
+
+\begin{figure}[htb]
+\centering
+\includegraphics[width=9cm]{./images/16.0804.194309.png}
+\end{figure}
+\end{frame}
+\begin{frame}[label=sec-5-3]{The Mean of F value}
+The Mean of F value: 
+\begin{figure}[htb]
+\centering
+\includegraphics[width=7cm]{./images/16.0804.194556.png}
+\end{figure}
+SO WE FITTED VERY WELL!!
+\end{frame}
+\begin{frame}[label=sec-5-4]{Highly correlated feature by Linear Regression}
+We just print the highly coefficient of Linear Regression
+\begin{figure}[htb]
+\centering
+\includegraphics[width=12cm]{./images/16.0804.201546.png}
+\end{figure}
+\end{frame}
+
+\begin{frame}[label=sec-5-5]{Feature Selection : LASSO}
+\begin{figure}[htb]
+\centering
+\includegraphics[width=11cm]{./images/16.0804.201223.png}
+\end{figure}
+\end{frame}
+
+\begin{frame}[label=sec-5-6]{Feature Selection : LASSO}
+the coefficient plot
+\begin{figure}[htb]
+\centering
+\includegraphics[width=8cm]{./images/16.0804.201654.png}
+\end{figure}
+\end{frame}
+
+\begin{frame}[label=sec-5-7]{Score of LASSO}
+\begin{figure}[htb]
+\centering
+\includegraphics[width=12cm]{./images/16.0804.201835.png}
+\end{figure}
+\end{frame}
+
+\begin{frame}[label=sec-5-8]{Label Distribution}
+\begin{figure}[htb]
+\centering
+\includegraphics[width=10cm]{./images/16.0804.211703.png}
+\end{figure}
+\end{frame}
+\begin{frame}[label=sec-5-9]{Features selected by Linear Regression}
+Maybe not the right feature, but don't know why.
+\begin{figure}[htb]
+\centering
+\includegraphics[width=8cm]{./images/16.0804.211605.png}
+\end{figure}
+\end{frame}
+
+\begin{frame}[label=sec-5-10]{Features selected by LASSO}
+Although we get the answer which seems more correct, but we just
+predict F, by other maybe varied related machine parameters???
+\begin{figure}[htb]
+\centering
+\includegraphics[width=10cm]{./images/16.0804.211733.png}
+\end{figure}
+\end{frame}
+
+\begin{frame}[label=sec-5-11]{Correlation of Features}
+\begin{figure}[htb]
+\centering
+\includegraphics[width=10cm]{./images/16.0804.220147.png}
+\end{figure}
+\end{frame}
+
+\begin{frame}[label=sec-5-12]{PCA dimension reduction}
+\begin{figure}[htb]
+\centering
+\includegraphics[width=10cm]{./images/16.0804.220247.png}
+\end{figure}
+\end{frame}
+
+\begin{frame}[label=sec-5-13]{CCA cross decomposition}
+I encountered some problem here, no graph yet.
+\end{frame}
+% Emacs 24.5.1 (Org mode 8.2.10)
+\end{document}

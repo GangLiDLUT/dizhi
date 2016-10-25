@@ -1,0 +1,416 @@
+#+TITLE:     Data Exploration
+#+AUTHOR:    crackhopper
+#+EMAIL:     crackhopper@gmail.com
+#+DATE:      2016-07-27 14:28:31
+#+DESCRIPTION: data exploration
+#+LANGUAGE:  en
+
+# specifying the beamer startup gives access to a number of
+# keybindings which make configuring individual slides and components
+# of slides easier.  See, for instance, C-c C-b on a frame headline.
+#+STARTUP: beamer
+
+#+STARTUP: oddeven
+
+# we tell the exporter to use a specific LaTeX document class, as
+# defined in org-latex-classes.  By default, this does not include a
+# beamer entry so this needs to be defined in your configuration (see
+# the tutorial).
+#+LaTeX_CLASS: beamer
+#+LaTeX_CLASS_OPTIONS: [bigger]
+
+# Beamer supports alternate themes.  Choose your favourite here
+#+BEAMER_THEME: Madrid
+
+# the beamer exporter expects to be told which level of headlines
+# defines the frames.  We use the first level headlines for sections
+# and the second (hence H:2) for frames.
+#+OPTIONS:   H:2 toc:t
+
+# the following allow us to selectively choose headlines to export or not
+#+SELECT_TAGS: export
+#+EXCLUDE_TAGS: noexport
+
+# for a column view of options and configurations for the individual
+# frames
+#+COLUMNS: %20ITEM %13BEAMER_env(Env) %6BEAMER_envargs(Args) %4BEAMER_col(Col) %7BEAMER_extra(Extra)
+
+#+LATEX_HEADER: \usepackage{xeCJK}
+#+LATEX_HEADER: \setCJKmainfont[BoldFont=STZhongsong, ItalicFont=STKaiti]{STSong}
+#+LATEX_HEADER: \setCJKsansfont[BoldFont=STHeiti]{STXihei}
+#+LATEX_HEADER: \setCJKmonofont{STFangsong}
+
+* Some Found Error in Data
+** Some Little Error in Data
+The feature map file is uncorrect. "参数对照表.csv"
+#+CAPTION:
+#+NAME:
+#+ATTR_LATEX: :width 11cm :float t
+#+ATTR_HTML: :width 500px
+[[./images/16.0727.170448.png]]
+
+We have feature "FRB4" here
+#+CAPTION:
+#+NAME:
+#+ATTR_LATEX: :width 7cm :float t
+#+ATTR_HTML: :width 500px
+[[./images/16.0727.170656.png]]
+** Some Little Error in Data
+But, we lose "FRB4" in our data, (in original data we also have feature
+"T")
+
+#+BEGIN_SRC matlab
+  feats.Properties.VariableNames
+#+END_SRC
+#+CAPTION:
+#+NAME:
+#+ATTR_LATEX: :width 11cm :float t
+#+ATTR_HTML: :width 500px
+[[./images/16.0727.170753.png]]
+
+* Explore the Labels
+** label F
+code:
+#+BEGIN_SRC matlab
+  hist(labs.F(abs(labs.F)<6000))
+#+END_SRC
+
+#+ATTR_LATEX: :width 7cm :float t
+#+ATTR_HTML: :width 500px
+[[./images/16.0727.154614.png]]
+** label T
+code:
+#+BEGIN_SRC matlab
+  hist(labs.F(abs(labs.F)<100))
+#+END_SRC
+
+#+ATTR_LATEX: :width 7cm :float t
+#+ATTR_HTML: :width 500px
+[[./images/16.0727.155045.png]]
+** label V
+code:
+#+BEGIN_SRC matlab
+  hist(labs.V(abs(labs.V)<1))
+#+END_SRC
+
+#+ATTR_LATEX: :width 7cm :float t
+#+ATTR_HTML: :width 500px
+[[./images/16.0727.155213.png]]
+** Conclusion
+*** Conclusion
+we should seperate data when we predict F and T.
+*** Codes
+#+BEGIN_SRC matlab
+featF = feats(~Fzero,:);
+labF = labs(~Fzero,:);
+featT = feats(~Tzero,:);
+labT = labs(~Tzero,:);
+featV = feats;
+labV = labs;
+#+END_SRC
+* Explore the Features 
+** Feature Category
+*** Feature Category
+- machine parameters
+- geometrical parameters
+*** Codes
+#+BEGIN_SRC matlab
+featureNames = featF.Properties.VariableNames;
+machine_para_idx = ...
+  arrayfun(@(n) isempty(n{1}), ...
+           regexp(featureNames,'\d'));
+geometry_para_idx = ~machine_para_idx;
+#+END_SRC
+** Feature Zero Count
+NOTE:
+- 1-50 :: machine parameters
+- 51-81 :: geometrical parameters
+#+ATTR_LATEX: :width 7cm :float t
+#+ATTR_HTML: :width 500px
+[[./images/16.0727.160122.png]]
+** Machanical Feature of a Large Zero Count
+*** Code
+\begingroup 
+\footnotesize
+#+BEGIN_SRC matlab
+sel = (featureZeroCount > 10000) & machine_para_idx;
+featuresManyZero = featF(:,sel);
+for token = featuresManyZero.Properties.VariableNames
+  t = token{:};
+  fmat = table2array(featuresManyZero(:,t));
+  fprintf('%s, %s, %d\n',t ...
+         ,getFeatMeaning(t,feat_meaning,feat_token) ...
+         ,sum(fmat==0));
+end
+#+END_SRC
+\endgroup
+*** Result
+\begingroup 
+\footnotesize
+#+BEGIN_EXAMPLE
+PDWDL, 盾尾密封前部左下压力, 18341
+PZUL, 左上注浆压力, 45819
+PZUR, 右上注浆压力, 45730
+PZDR, 右下注浆压力, 65981
+PZDL, 左下注浆压力, 51743
+#+END_EXAMPLE
+\endgroup
+** Machanical Feature of a Large Zero Count
+#+CAPTION:
+#+NAME:
+#+ATTR_LATEX: :width 9cm :float t
+#+ATTR_HTML: :width 500px
+[[./images/16.0727.172847.png]]
+** Machanical Feature of a Large Zero Count
+How to process these features?
+
+\vspace{10pt}
+
+for : PZUL,PZUR,PZDL,PZDR
+
+\vspace{10pt}
+
+- Ignore them [we just ignore them now]
+- Seperate the zero and non-zero, then process the data
+- Drop the features 
+- Turn into Discrete features
+** Feature Quantiles
+#+BEGIN_SRC matlab
+ds=table2dataset(featF);
+a=summary(ds);
+b=[a.Variables(:).Data];
+c=[b(:).Quantiles];
+#+END_SRC
+
+
+#+ATTR_LATEX: :width 10cm :float t
+#+ATTR_HTML: :width 500px
+[[./images/16.0727.180851.png]]
+
+#+CAPTION:
+#+NAME:
+#+ATTR_LATEX: :width 10cm :float t
+#+ATTR_HTML: :width 500px
+[[./images/16.0727.181141.png]]
+** Feature Quantiles
+*** Problems
+- Many feature concentrate around small value
+- Features have different scales
+*** What we can do
+- Outlier Detection (will force some feature to be zero)
+- Normalize all features (we do this now)
+- Equalize some features
+- Pick Out some feature to seperately handle (features of almost
+  Zero-value)
+** Step Changes in Geometrical Features
+Y2,地层2比重
+#+CAPTION:
+#+NAME:
+#+ATTR_LATEX: :width 7cm :float t
+#+ATTR_HTML: :width 500px
+[[./images/16.0727.183921.png]]
+** Step Changes in Geometrical Features
+H1,地层1厚度
+#+CAPTION:
+#+NAME:
+#+ATTR_LATEX: :width 7cm :float t
+#+ATTR_HTML: :width 500px
+[[./images/16.0727.184202.png]]
+** Conclusions about Geometrical Features
+- Not very predictable
+- Can be treated as const value in local
+- Change in a jumping way
+- Some parameters change more frequently than others
+*** What can we do in future?
+- For less changed parameter, we can seperate dataset so that they are
+  not changed in a subset
+- For frequently changed parameter, maybe smoothen?
+*** noheading                                             :B_ignoreheading:
+:PROPERTIES:
+:BEAMER_env: ignoreheading
+:END:
+We don't handle this problem
+
+* Quick and Dirty Experiment
+** Data Prepare
+I drop the sample with abnormal labels, and get 3 tasks corresponding
+to the prediction of each label :
+
+- X_F, Y_F :: drop 0-valued F, normalize all features
+- X_T, Y_T :: drop 0-valued T, normalize all features
+- X_V, Y_V :: normalize all samples
+
+Now we have 3 task, with a little different sampleset.
+** Linear model Prediction of F
+*** Code
+#+BEGIN_SRC matlab
+lm=fitlm(X_tr{1},Y_tr{1});
+w=lm.Coefficients.Estimate;
+rmse=std(Y_te{1}-X_te{1}*w(2:nfeat+1)-w(1));
+fprintf('lm :%.4f\n',rmse);
+#+END_SRC
+*** Result
+lm :1.5977
+** Multitask Learning for a Trial
+*** Multi-task Lasso with Least Squares Loss
+\begin{equation*}
+\min_W \sum_{i=1}^M ||W^T_iX_i-Y_i|| + \rho_1 ||W||_1 + \rho_2 ||W||_F^2
+\end{equation*}
+*** noheading                                             :B_ignoreheading:
+:PROPERTIES:
+:BEAMER_env: ignoreheading
+:END:
+#+CAPTION:
+#+NAME:
+#+ATTR_LATEX: :width 10cm :float t
+#+ATTR_HTML: :width 500px
+[[./images/16.0727.193246.png]]
+** Prediction of F (MTL lasso)
+*** Code
+#+BEGIN_SRC matlab
+W = Least_Lasso(X_tr, Y_tr, 0, opts);
+X1=X_te{1};
+Y1=Y_te{1};
+W1=W(:,1);
+rmse=std(Y1-X1*W1);
+fprintf('mtl:%.4f\n',rmse);
+#+END_SRC
+*** Result
+mtl:1.9027
+** Multitask Learning for a Trial
+*** Multi-task with Trace-norm regularizer
+\begin{equation*}
+\min_W \mathcal{L}(W) + \lambda rank(W)
+\end{equation*}
+*** noheading                                             :B_ignoreheading:
+:PROPERTIES:
+:BEAMER_env: ignoreheading
+:END:
+#+CAPTION:
+#+NAME:
+#+ATTR_LATEX: :width 10cm :float t
+#+ATTR_HTML: :width 500px
+[[./images/16.0727.215107.png]]
+** Prediction of F (MTL trace norm)
+*** Code
+#+BEGIN_SRC matlab
+W = Least_Trace(X_tr, Y_tr, 0, opts);
+X1=X_te{1};
+Y1=Y_te{1};
+W1=W(:,1);
+rmse=std(Y1-X1*W1);
+fprintf('mtl:%.4f\n',rmse);
+#+END_SRC
+*** Result
+mtl:49.6251
+* Experiment Done by Sci-kit learn
+** Linear Regression
+#+CAPTION:
+#+NAME:
+#+ATTR_LATEX: :width 8cm :float t
+#+ATTR_HTML: :width 500px
+[[./images/16.0804.193322.png]]
+** Score of Linear Regression
+\begin{equation*}
+score = 1-\frac{\sum(y_{pred}-y_{true})^2}{\sum(y_{true}-y_{mean})^{2}}
+\end{equation*}
+
+#+CAPTION:
+#+NAME:
+#+ATTR_LATEX: :width 7cm :float t
+#+ATTR_HTML: :width 500px
+[[./images/16.0804.193825.png]]
+
+\begin{equation*}
+rmse = \sqrt{\frac{1}{n}\sum(y_{pred}-y_{true})^2}
+\end{equation*}
+
+#+CAPTION:
+#+NAME:
+#+ATTR_LATEX: :width 9cm :float t
+#+ATTR_HTML: :width 500px
+[[./images/16.0804.194309.png]]
+** The Mean of F value
+The Mean of F value: 
+#+CAPTION:
+#+NAME:
+#+ATTR_LATEX: :width 7cm :float t
+#+ATTR_HTML: :width 500px
+[[./images/16.0804.194556.png]]
+SO WE FITTED VERY WELL!!
+** Highly correlated feature by Linear Regression
+We just print the highly coefficient of Linear Regression
+#+CAPTION:
+#+NAME:
+#+ATTR_LATEX: :width 12cm :float t
+#+ATTR_HTML: :width 500px
+[[./images/16.0804.201546.png]]
+
+** Feature Selection : LASSO
+#+CAPTION:
+#+NAME:
+#+ATTR_LATEX: :width 11cm :float t
+#+ATTR_HTML: :width 500px
+[[./images/16.0804.201223.png]]
+
+** Feature Selection : LASSO
+the coefficient plot
+#+CAPTION:
+#+NAME:
+#+ATTR_LATEX: :width 8cm :float t
+#+ATTR_HTML: :width 500px
+[[./images/16.0804.201654.png]]
+
+** Score of LASSO
+#+CAPTION:
+#+NAME:
+#+ATTR_LATEX: :width 12cm :float t
+#+ATTR_HTML: :width 500px
+[[./images/16.0804.201835.png]]
+
+** Label Distribution
+#+CAPTION:
+#+NAME:
+#+ATTR_LATEX: :width 10cm :float t
+#+ATTR_HTML: :width 500px
+[[./images/16.0804.211703.png]]
+** Features selected by Linear Regression
+Maybe not the right feature, but don't know why.
+#+CAPTION:
+#+NAME:
+#+ATTR_LATEX: :width 8cm :float t
+#+ATTR_HTML: :width 500px
+[[./images/16.0804.211605.png]]
+
+** Features selected by LASSO
+Although we get the answer which seems more correct, but we just
+predict F, by other maybe varied related machine parameters???
+#+CAPTION:
+#+NAME:
+#+ATTR_LATEX: :width 10cm :float t
+#+ATTR_HTML: :width 500px
+[[./images/16.0804.211733.png]]
+
+** Correlation of Features
+#+CAPTION:
+#+NAME:
+#+ATTR_LATEX: :width 10cm :float t
+#+ATTR_HTML: :width 500px
+[[./images/16.0804.220147.png]]
+
+** PCA dimension reduction
+#+CAPTION:
+#+NAME:
+#+ATTR_LATEX: :width 10cm :float t
+#+ATTR_HTML: :width 500px
+[[./images/16.0804.220247.png]]
+
+** CCA cross decomposition
+I encountered some problem here, no graph yet.
+
+
+
+\begin{equation*}
+\min \frac{1}{n}\sum \frac{1}{2} (Y-Wx)^2 + \lambda ||W||_1
+\end{equation*}
+

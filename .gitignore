@@ -5,3 +5,9 @@
 *.rar
 *.h5
 python/.ipynb_checkpoints/*
+images/
+auto/
+*.bbl
+*.blg
+*.pdf
+*.html
