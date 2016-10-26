@@ -4,7 +4,7 @@
 *.docx
 *.rar
 *.h5
-python/.ipynb_checkpoints/*
+*/.ipynb_checkpoints/*
 images/
 auto/
 *.bbl
