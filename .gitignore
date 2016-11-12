@@ -1,6 +1,7 @@
 *~
 *.mat
 *.csv
+!Data/LOCATION.csv
 *.docx
 *.rar
 *.h5
